@@ -27,3 +27,6 @@ target/
 *.tfstate
 *.tfvars
 *.log
+*.tmp
+cdk.out/
+template.yaml
