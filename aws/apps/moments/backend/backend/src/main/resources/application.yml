@@ -1,0 +1,14 @@
+spring.application.name: backend
+
+spring.cloud.aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
+    region:
+      static: us-east-1
+    s3:
+      enabled: true
+
+moments:
+  s3:
+    bucket: moments-place-for-memories
