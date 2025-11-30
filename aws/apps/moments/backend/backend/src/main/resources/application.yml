@@ -5,10 +5,12 @@ spring.cloud.aws:
       access-key: ${AWS_ACCESS_KEY_ID}
       secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
-      static: us-east-1
+      static: ${AWS_REGION}
     s3:
       enabled: true
+    dynamodb:
+      region: ${AWS_REGION}
 
 moments:
   s3:
-    bucket: moments-place-for-memories
+    bucket: ${BUCKET_NAME}

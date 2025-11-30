@@ -1,42 +1,38 @@
 package com.moments;
 
-import jakarta.persistence.*;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "photos")
-public class Photo {
+@DynamoDbBean
+@TableName(name = "moments_photos")
+public class PhotoItem {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String s3Key;
-
-    @Column(nullable = false)
+    private String pk;
+    private String sk;
     private String url;
-
-    @Column(nullable = false)
+    private String s3Key;
+    private String description;
     private Instant uploadDate;
 
-    private String description;
-
-    public Long getId() {
-        return id;
+    @DynamoDbPartitionKey
+    public String getPk() {
+        return pk;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setPk(String pk) {
+        this.pk = pk;
     }
 
-    public String getS3Key() {
-        return s3Key;
+    @DynamoDbSortKey
+    public String getSk() {
+        return sk;
     }
 
-    public void setS3Key(String s3Key) {
-        this.s3Key = s3Key;
+    public void setSk(String sk) {
+        this.sk = sk;
     }
 
     public String getUrl() {
@@ -47,12 +43,12 @@ public class Photo {
         this.url = url;
     }
 
-    public Instant getUploadDate() {
-        return uploadDate;
+    public String getS3Key() {
+        return s3Key;
     }
 
-    public void setUploadDate(Instant uploadDate) {
-        this.uploadDate = uploadDate;
+    public void setS3Key(String s3Key) {
+        this.s3Key = s3Key;
     }
 
     public String getDescription() {
@@ -63,4 +59,11 @@ public class Photo {
         this.description = description;
     }
 
+    public Instant getUploadDate() {
+        return uploadDate;
+    }
+
+    public void setUploadDate(Instant uploadDate) {
+        this.uploadDate = uploadDate;
+    }
 }
