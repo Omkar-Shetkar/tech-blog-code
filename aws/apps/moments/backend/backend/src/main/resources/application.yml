@@ -1,15 +1,15 @@
 spring.application.name: backend
 
 spring.cloud.aws:
-    credentials:
-      access-key: ${AWS_ACCESS_KEY_ID}
-      secret-key: ${AWS_SECRET_ACCESS_KEY}
+#    credentials:
+#      access-key: ${AWS_ACCESS_KEY_ID}
+#      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
-      static: ${AWS_REGION}
+      static: ${AWS_REGION_NAME}
     s3:
       enabled: true
     dynamodb:
-      region: ${AWS_REGION}
+      region: ${AWS_REGION_NAME}
 
 moments:
   s3:

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
+const API_BASE = "https://f83szrkvsi.execute-api.us-east-1.amazonaws.com/";
+
 function groupPhotosByDate(photos) {
   return photos.reduce((groups, photo) => {
     const date = new Date(photo.uploadDate);
@@ -30,7 +32,7 @@ function App() {
       setLoadingPhotos(true);
       setPhotoError("");
       try {
-        const response = await fetch("http://localhost:8080/api/photos");
+        const response = await fetch(`${API_BASE}/api/photos`);
         if (!response.ok) {
           throw new Error("Failed to load photos");
         }
@@ -62,7 +64,7 @@ function App() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const response = await fetch("http://localhost:8080/api/uploads", {
+      const response = await fetch(`${API_BASE}/api/uploads`, {
         method: "POST",
         body: formData,
         // No manual Content-Type header; browser sets multipart boundary
@@ -72,7 +74,11 @@ function App() {
         throw new Error("Upload failed");
       }
 
+      console.log("Upload response:", response);
       const data = await response.json();
+
+      console.log("Upload data:", data);
+      
       setMessage(`Uploaded successfully. Key: ${data.key}`);
       setSelectedFile(null);
     } catch (err) {

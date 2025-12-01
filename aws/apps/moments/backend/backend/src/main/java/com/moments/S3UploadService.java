@@ -1,11 +1,11 @@
 package com.moments;
 
+import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Template;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
 @Service
@@ -20,17 +20,26 @@ public class S3UploadService {
         this.s3Template = s3Template;
     }
 
-    public String upload(MultipartFile file) throws IOException {
+    public String upload(String fileName,
+                         String contentType,
+                         byte[] bytes,
+                         String extension) {
 
-        String key = "photos/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
+        // if fileName already has ".jpg", don't append extension again
+        String keyName = fileName;
+        if (extension != null && !extension.isBlank() && !fileName.endsWith(extension)) {
+            keyName = fileName + extension;
+        }
+
+        String key = "photos/" + UUID.randomUUID() + "-" + keyName;
 
         s3Template.upload(
                 bucketName,
                 key,
-                file.getInputStream()
+                new ByteArrayInputStream(bytes),
+                ObjectMetadata.builder().contentType(contentType).build()
         );
 
-        // public URL if bucket is public/CF later; for now just return key
         return key;
     }
 }
