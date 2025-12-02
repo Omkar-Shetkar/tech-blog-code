@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-const API_BASE = "https://f83szrkvsi.execute-api.us-east-1.amazonaws.com/";
+const API_BASE = "https://f83szrkvsi.execute-api.us-east-1.amazonaws.com";
 
 function groupPhotosByDate(photos) {
   return photos.reduce((groups, photo) => {
