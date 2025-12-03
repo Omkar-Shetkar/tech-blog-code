@@ -1,5 +1,6 @@
 package com.moments;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,9 @@ import java.util.function.Function;
 
 @SpringBootApplication
 public class BackendApplication {
+
+    @Value("${moments.cloud-front-distribution.domain}")
+    private String domain;
 
     public static void main(String[] args) {
         SpringApplication.run(BackendApplication.class, args);
@@ -72,7 +76,7 @@ public class BackendApplication {
 
             // 6) Upload clean image bytes
             String s3Key = s3UploadService.upload(fileName, contentType, fileBytes, extension);
-            String url = "https://d2zkx2tprcx426.cloudfront.net/%s".formatted(s3Key);
+            String url = "https://%s/%s".formatted(domain, s3Key);
             repository.save(s3Key, url, fileName);
             return new UploadResponse(s3Key, url);
         };
