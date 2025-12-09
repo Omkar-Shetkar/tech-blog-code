@@ -143,3 +143,89 @@
   color: #ff6b6b;
   font-size: 14px;
 }
+
+/* Login bar at top of card */
+.login-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #151515;
+}
+
+/* Container for login inputs/buttons when logged out */
+.login-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Email & code inputs in login area */
+.login-form input[type="email"],
+.login-form input[type="text"] {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #111;
+  color: #f5f5f5;
+  font-size: 0.9rem;
+}
+
+.login-form input::placeholder {
+  color: #777;
+}
+
+/* Small status / error message under login controls */
+.login-message {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: #f0b429; /* amber / warning tone */
+}
+
+/* When logged in: email + logout button */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+/* Optional avatar image if you add one later */
+.user-info .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Secondary button style for login/logout */
+.secondary-btn {
+  border: 1px solid #3a3a3a;
+  background-color: #202020;
+  color: #f5f5f5;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background-color: #2b2b2b;
+  border-color: #4a4a4a;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Reuse existing error style for “Please login…” messages */
+.error-text {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}

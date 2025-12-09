@@ -16,6 +16,12 @@ function groupPhotosByDate(photos) {
 }
 
 function App() {
+  const [user, setUser] = useState(null); // {email}
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginStage, setLoginStage] = useState("idle"); // "idle" | "code-sent" | "verifying"
+  const [loginCode, setLoginCode] = useState("");
+  const [loginMessage, setLoginMessage] = useState("");
+
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -25,14 +31,45 @@ function App() {
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [photoError, setPhotoError] = useState("");
 
+  async function requestLoginCode(email) {
+    const res = await fetch(`${API_BASE}/auth/request-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to request login code");
+    }
+  }
+
+  async function verifyLoginCode(email, code) {
+    const res = await fetch(`${API_BASE}/auth/verify-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to verify login code");
+    }
+    return res.json(); // { token, email }
+  }
+
   useEffect(() => {
     if (activeTab !== "view") return;
 
     const fetchPhotos = async () => {
       setLoadingPhotos(true);
       setPhotoError("");
+
       try {
-        const response = await fetch(`${API_BASE}/api/photos`);
+        const authToken = localStorage.getItem("authToken") || "";
+        const authHeader = authToken
+          ? { Authorization: `Bearer ${authToken}` }
+          : {};
+
+        const response = await fetch(`${API_BASE}/api/photos`, {
+          headers: authHeader,
+        });
         if (!response.ok) {
           throw new Error("Failed to load photos");
         }
@@ -64,8 +101,14 @@ function App() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
+      const authToken = localStorage.getItem("authToken") || "";
+      const authHeader = authToken
+        ? { Authorization: `Bearer ${authToken}` }
+        : {};
+
       const response = await fetch(`${API_BASE}/api/uploads`, {
         method: "POST",
+        headers: authHeader,
         body: formData,
         // No manual Content-Type header; browser sets multipart boundary
       });
@@ -78,7 +121,7 @@ function App() {
       const data = await response.json();
 
       console.log("Upload data:", data);
-      
+
       setMessage(`Uploaded successfully. Key: ${data.key}`);
       setSelectedFile(null);
     } catch (err) {
@@ -92,6 +135,90 @@ function App() {
     <div className="app-root">
       <div className="app-card">
         <h1 className="app-title">Moments - Place for Memories</h1>
+
+        <div className="login-bar">
+          {user ? (
+            <>
+              <span>Signed in as {user.email}</span>
+              <button
+                className="secondary-btn"
+                onClick={() => {
+                  setUser(null);
+                  localStorage.removeItem("authToken");
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <div className="login-form">
+              {loginStage === "idle" && (
+                <>
+                  <input
+                    type="email"
+                    placeholder="Enter email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                  />
+                  <button
+                    className="secondary-btn"
+                    onClick={async () => {
+                      try {
+                        setLoginMessage("");
+                        await requestLoginCode(loginEmail);
+                        setLoginStage("code-sent");
+                        setLoginMessage(
+                          "Verification code sent. Check your email."
+                        );
+                      } catch {
+                        setLoginMessage("Could not send code. Try again.");
+                      }
+                    }}
+                    disabled={!loginEmail}
+                  >
+                    Send code
+                  </button>
+                </>
+              )}
+
+              {loginStage === "code-sent" && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Enter code"
+                    value={loginCode}
+                    onChange={(e) => setLoginCode(e.target.value)}
+                  />
+                  <button
+                    className="secondary-btn"
+                    onClick={async () => {
+                      try {
+                        setLoginStage("verifying");
+                        const { token, email } = await verifyLoginCode(
+                          loginEmail,
+                          loginCode
+                        );
+                        localStorage.setItem("authToken", token);
+                        setUser({ email });
+                        setLoginMessage("");
+                      } catch {
+                        setLoginMessage("Invalid or expired code.");
+                        setLoginStage("code-sent");
+                      }
+                    }}
+                    disabled={!loginCode}
+                  >
+                    Verify & Login
+                  </button>
+                </>
+              )}
+
+              {loginMessage && (
+                <span className="login-message">{loginMessage}</span>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="tabs">
           <button
@@ -111,34 +238,46 @@ function App() {
         <div className="tab-content">
           {activeTab === "upload" && (
             <div className="upload-screen">
-              <p className="upload-hint">Choose a photo to upload.</p>
-
-              <label className="file-picker">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-                <span>Browse…</span>
-              </label>
-
-              {selectedFile && (
-                <div className="file-info">
-                  <div>Name: {selectedFile.name}</div>
-                  <div>Type: {selectedFile.type || "Unknown"}</div>
-                  <div>Size: {(selectedFile.size / 1024).toFixed(1)} KB</div>
-                </div>
+              {!user && (
+                <p className="error-text">
+                  Please login with your email to upload or view photos.
+                </p>
               )}
 
-              <button
-                className="primary-btn"
-                disabled={!selectedFile || uploading}
-                onClick={handleUploadClick}
-              >
-                {uploading ? "Uploading..." : "Upload"}
-              </button>
+              {user && (
+                <>
+                  <p className="upload-hint">Choose a photo to upload.</p>
 
-              {message && <p className="upload-message">{message}</p>}
+                  <label className="file-picker">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                    <span>Browse…</span>
+                  </label>
+
+                  {selectedFile && (
+                    <div className="file-info">
+                      <div>Name: {selectedFile.name}</div>
+                      <div>Type: {selectedFile.type || "Unknown"}</div>
+                      <div>
+                        Size: {(selectedFile.size / 1024).toFixed(1)} KB
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    className="primary-btn"
+                    disabled={!selectedFile || uploading}
+                    onClick={handleUploadClick}
+                  >
+                    {uploading ? "Uploading..." : "Upload"}
+                  </button>
+
+                  {message && <p className="upload-message">{message}</p>}
+                </>
+              )}
             </div>
           )}
 
@@ -146,31 +285,41 @@ function App() {
             <div className="view-screen">
               <h2>View Moments</h2>
 
-              {loadingPhotos && <p>Loading photos...</p>}
-              {photoError && <p className="error-text">{photoError}</p>}
-
-              {!loadingPhotos && !photoError && photos.length === 0 && (
-                <p>No photos uploaded yet.</p>
+              {!user && (
+                <p className="error-text">
+                  Please login with your email to view photos.
+                </p>
               )}
 
-              {!loadingPhotos && !photoError && photos.length > 0 && (
+              {user && (
                 <>
-                  {Object.entries(groupPhotosByDate(photos)).map(
-                    ([date, items]) => (
-                      <div key={date} className="photo-group">
-                        <h3 className="photo-group-title">{date}</h3>
-                        <div className="photo-grid">
-                          {items.map((photo) => (
-                            <div key={photo.id} className="photo-item">
-                              <img
-                                src={photo.url}
-                                alt={photo.description || "Moment"}
-                              />
+                  {loadingPhotos && <p>Loading photos...</p>}
+                  {photoError && <p className="error-text">{photoError}</p>}
+
+                  {!loadingPhotos && !photoError && photos.length === 0 && (
+                    <p>No photos uploaded yet.</p>
+                  )}
+
+                  {!loadingPhotos && !photoError && photos.length > 0 && (
+                    <>
+                      {Object.entries(groupPhotosByDate(photos)).map(
+                        ([date, items]) => (
+                          <div key={date} className="photo-group">
+                            <h3 className="photo-group-title">{date}</h3>
+                            <div className="photo-grid">
+                              {items.map((photo) => (
+                                <div key={photo.id} className="photo-item">
+                                  <img
+                                    src={photo.url}
+                                    alt={photo.description || "Moment"}
+                                  />
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )
+                          </div>
+                        )
+                      )}
+                    </>
                   )}
                 </>
               )}
