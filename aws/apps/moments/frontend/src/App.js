@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import { cognitoAuthUrl, tokenUrl, clientId, redirectUri, logoutUrl } from "./authConfig";
 
 const API_BASE = "https://f83szrkvsi.execute-api.us-east-1.amazonaws.com";
 
@@ -17,10 +18,9 @@ function groupPhotosByDate(photos) {
 
 function App() {
   const [user, setUser] = useState(null); // {email}
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginStage, setLoginStage] = useState("idle"); // "idle" | "code-sent" | "verifying"
-  const [loginCode, setLoginCode] = useState("");
-  const [loginMessage, setLoginMessage] = useState("");
+  const [authToken, setAuthToken] = useState(
+    localStorage.getItem("authToken") || ""
+  );
 
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -31,28 +31,48 @@ function App() {
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [photoError, setPhotoError] = useState("");
 
-  async function requestLoginCode(email) {
-    const res = await fetch(`${API_BASE}/auth/request-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    if (!res.ok) {
-      throw new Error("Failed to request login code");
-    }
-  }
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code || authToken) return;
 
-  async function verifyLoginCode(email, code) {
-    const res = await fetch(`${API_BASE}/auth/verify-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code }),
-    });
-    if (!res.ok) {
-      throw new Error("Failed to verify login code");
-    }
-    return res.json(); // { token, email }
-  }
+    (async () => {
+      const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
+        code,
+        redirect_uri: redirectUri,
+      });
+
+      const res = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+
+      if (!res.ok) {
+        console.error("Token exchange failed");
+        const text = await res.text();
+        console.error("Token error body:", text);
+        return;
+      }
+
+      const tokens = await res.json(); // { access_token, id_token, ... }
+      localStorage.setItem("authToken", tokens.access_token);
+      setAuthToken(tokens.access_token);
+
+      const idPayload = JSON.parse(
+        atob(
+          tokens.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")
+        )
+      );
+      setUser({ email: idPayload.email });
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+    })();
+  }, [authToken]);
 
   useEffect(() => {
     if (activeTab !== "view") return;
@@ -143,80 +163,24 @@ function App() {
               <button
                 className="secondary-btn"
                 onClick={() => {
-                  setUser(null);
                   localStorage.removeItem("authToken");
+                  setAuthToken("");
+                  setUser(null);
+                  window.location.href = logoutUrl; // End Cognito session
                 }}
               >
                 Logout
               </button>
             </>
           ) : (
-            <div className="login-form">
-              {loginStage === "idle" && (
-                <>
-                  <input
-                    type="email"
-                    placeholder="Enter email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                  />
-                  <button
-                    className="secondary-btn"
-                    onClick={async () => {
-                      try {
-                        setLoginMessage("");
-                        await requestLoginCode(loginEmail);
-                        setLoginStage("code-sent");
-                        setLoginMessage(
-                          "Verification code sent. Check your email."
-                        );
-                      } catch {
-                        setLoginMessage("Could not send code. Try again.");
-                      }
-                    }}
-                    disabled={!loginEmail}
-                  >
-                    Send code
-                  </button>
-                </>
-              )}
-
-              {loginStage === "code-sent" && (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Enter code"
-                    value={loginCode}
-                    onChange={(e) => setLoginCode(e.target.value)}
-                  />
-                  <button
-                    className="secondary-btn"
-                    onClick={async () => {
-                      try {
-                        setLoginStage("verifying");
-                        const { token, email } = await verifyLoginCode(
-                          loginEmail,
-                          loginCode
-                        );
-                        localStorage.setItem("authToken", token);
-                        setUser({ email });
-                        setLoginMessage("");
-                      } catch {
-                        setLoginMessage("Invalid or expired code.");
-                        setLoginStage("code-sent");
-                      }
-                    }}
-                    disabled={!loginCode}
-                  >
-                    Verify & Login
-                  </button>
-                </>
-              )}
-
-              {loginMessage && (
-                <span className="login-message">{loginMessage}</span>
-              )}
-            </div>
+            <button
+              className="secondary-btn"
+              onClick={() => {
+                window.location.href = cognitoAuthUrl;
+              }}
+            >
+              Login with Email
+            </button>
           )}
         </div>
 
