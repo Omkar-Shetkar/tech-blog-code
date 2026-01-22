@@ -1,3 +1,0 @@
-[submodule "ai/ecommerce-order-agent"]
-	path = ai/ecommerce-order-agent
-	url = git@github.com:Omkar-Shetkar/ecommerce-order-agent.git
