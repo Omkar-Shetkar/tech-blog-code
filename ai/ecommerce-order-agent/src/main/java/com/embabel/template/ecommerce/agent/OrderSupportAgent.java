@@ -52,7 +52,7 @@ public class OrderSupportAgent {
     public record ReplacementReport(String text, boolean isEligible) {
     }
 
-    public record StockReport(String text) {
+    public record StockReport(String text, boolean hasStock) {
     }
 
     public record DeliveryReport(String text) {
@@ -90,6 +90,16 @@ public class OrderSupportAgent {
                 .createObject("Check stock for: " + replacementReport.text(), StockReport.class);
     }
 
+    @AchievesGoal(description = "Customer Representative composes a mail for out of stock items")
+    @Action(description = "Compose a mail to customer for out of stock items", pre = {"hasStockCondition"})
+    public CustomerConfirmationReport handleOutOfStock(StockReport stockReport, OperationContext context) {
+        return context.ai()
+                .withAutoLlm()
+                .withPromptContributor(Personas.CUSTOMER_REPRESENTATIVE)
+                .createObject(String.format("Compose a reply mail to customer for items being out of stock: " + stockReport.text())
+                        .trim(), CustomerConfirmationReport.class);
+    }
+
     @Action
     DeliveryReport deliveryReport(StockReport stockReport, Ai ai) {
         return ai
@@ -113,6 +123,12 @@ public class OrderSupportAgent {
     boolean orderEligibilityCondition(ReplacementReport replacementReport) {
         logger.info(String.format("Order eligibility condition: %s", replacementReport.isEligible()));
         return replacementReport.isEligible();
+    }
+
+    @Condition
+    boolean hasStockCondition(StockReport stockReport) {
+        logger.info(String.format("Stock availability condition: %s", stockReport.hasStock()));
+        return stockReport.hasStock();
     }
 
 }
