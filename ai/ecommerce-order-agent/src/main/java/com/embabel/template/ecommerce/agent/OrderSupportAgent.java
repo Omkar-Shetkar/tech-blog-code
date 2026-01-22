@@ -121,13 +121,11 @@ public class OrderSupportAgent {
 
     @Condition
     boolean orderEligibilityCondition(ReplacementReport replacementReport) {
-        logger.info(String.format("Order eligibility condition: %s", replacementReport.isEligible()));
         return replacementReport.isEligible();
     }
 
     @Condition
     boolean hasStockCondition(StockReport stockReport) {
-        logger.info(String.format("Stock availability condition: %s", stockReport.hasStock()));
         return stockReport.hasStock();
     }
 
