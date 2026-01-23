@@ -8,29 +8,36 @@ import java.util.List;
 @Component
 public class Inventory {
 
-    @LlmTool(description = "List of items with code, name, and stock")
-    public List<Item> items() {
+    public record Stock(String itemId, int availableQuantity) {}
+
+    @LlmTool(description = "List of current stock levels by item ID")
+    public List<Stock> items() {
         return List.of(
-                new Item("ITM001", "Laptop Dell XPS", 0),
-                new Item("ITM002", "Mouse Wireless", 120),
-                new Item("ITM003", "Keyboard Mechanical", 80),
-                new Item("ITM004", "Monitor 24in", 30),
-                new Item("ITM005", "Headphones Sony", 45),
-                new Item("ITM006", "USB Cable Type-C", 200),
-                new Item("ITM007", "Hard Drive 1TB", 25),
-                new Item("ITM008", "Webcam HD", 60),
-                new Item("ITM009", "Power Adapter", 90),
-                new Item("ITM010", "Chocolate Bar Dairy Milk", 250),
-                new Item("ITM011", "Croissant Fresh Bakery", 120),
-                new Item("ITM012", "Marie Biscuits Pack", 180),
-                new Item("ITM013", "Milk Full Cream 1L", 80),
-                new Item("ITM014", "Butter Amul 500g", 60),
-                new Item("ITM015", "Yogurt Plain 400g", 100),
-                new Item("ITM016", "Cookies Oreo Pack", 140),
-                new Item("ITM017", "Bread White Loaf", 90),
-                new Item("ITM018", "Cheese Slice Pack", 70),
-                new Item("ITM019", "Apple iPhone", 200),
-                new Item("ITM020", "Ice Cream Vanilla Tub", 40)
+                // Electronics
+                new Stock("ITM001", 0),
+                new Stock("ITM002", 120),
+                new Stock("ITM003", 80),
+                new Stock("ITM004", 30),
+                new Stock("ITM005", 45),
+                new Stock("ITM006", 200),
+                new Stock("ITM007", 25),
+                new Stock("ITM008", 60),
+                new Stock("ITM009", 90),
+                new Stock("ITM019", 200),
+
+                // Bakery & Dairy
+                new Stock("ITM011", 120),
+                new Stock("ITM013", 80),
+                new Stock("ITM014", 60),
+                new Stock("ITM015", 100),
+                new Stock("ITM017", 90),
+                new Stock("ITM018", 70),
+
+                // Snacks & Confectionery
+                new Stock("ITM010", 250),
+                new Stock("ITM012", 180),
+                new Stock("ITM016", 140),
+                new Stock("ITM020", 40)
         );
     }
 

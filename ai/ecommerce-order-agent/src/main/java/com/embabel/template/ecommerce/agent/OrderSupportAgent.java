@@ -9,10 +9,7 @@ import com.embabel.agent.api.common.OperationContext;
 import com.embabel.agent.domain.io.UserInput;
 import com.embabel.agent.prompt.persona.Persona;
 import com.embabel.common.ai.model.LlmOptions;
-import com.embabel.template.ecommerce.Inventory;
-import com.embabel.template.ecommerce.Order;
-import com.embabel.template.ecommerce.Orders;
-import com.embabel.template.ecommerce.RuleBook;
+import com.embabel.template.ecommerce.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +39,13 @@ public class OrderSupportAgent {
     private final Inventory inventory;
 
     static final Logger logger = LoggerFactory.getLogger(OrderSupportAgent.class);
+    private final Catalogue catalogue;
 
-    public OrderSupportAgent(RuleBook ruleBook, Orders orders, Inventory inventory) {
+    public OrderSupportAgent(RuleBook ruleBook, Orders orders, Inventory inventory, Catalogue catalogue) {
         this.ruleBook = ruleBook;
         this.orders = orders;
         this.inventory = inventory;
+        this.catalogue = catalogue;
     }
 
     public record ReplacementReport(String text, boolean isEligible) {
@@ -64,40 +63,24 @@ public class OrderSupportAgent {
     @Action
     public ReplacementReport replacementReport(UserInput userInput, Ai ai) {
         return ai.withAutoLlm()
-                .withToolObjects(List.of(ruleBook, inventory, orders))
+                .withToolObjects(List.of(ruleBook, catalogue, orders))
                 .createObject(String.format("""
                         Verify eligibility for replacement of items in the order: %s
                         Check item details from inventory and check whether they are eligible for replacement from rule book.
+                        STRICT: Set `isEligible` to true if item is eligible for replacement from rule book.
                         """, userInput.getContent()), ReplacementReport.class);
     }
 
-    @AchievesGoal(description = "Customer Representative composes a mail for ineligible order")
-    @Action(description = "Compose a mail to customer for ineligible order")
-    public CustomerConfirmationReport handleNotEligibleOrder(ReplacementReport replacementReport, OperationContext context) {
-        return context.ai()
-                .withAutoLlm()
-                .withPromptContributor(Personas.CUSTOMER_REPRESENTATIVE)
-                .createObject(String.format("Compose a reply mail to customer for order being not eligible for replacement: " + replacementReport.text())
-                        .trim(), CustomerConfirmationReport.class);
-    }
-
-    @Action(description = "Check stock for items in the oder", pre = {"orderEligibilityCondition"})
+    @Action(description = "Check stock for items in the oder")
     StockReport stockReport(ReplacementReport replacementReport, Ai ai) {
         return ai
                 .withAutoLlm()
                 .withPromptContributor(Personas.STORE_REPRESENTATIVE)
-                .withToolObjects(List.of(ruleBook, inventory, orders))
-                .createObject("Check stock for: " + replacementReport.text(), StockReport.class);
-    }
-
-    @AchievesGoal(description = "Customer Representative composes a mail for out of stock items")
-    @Action(description = "Compose a mail to customer for out of stock items", pre = {"hasStockCondition"})
-    public CustomerConfirmationReport handleOutOfStock(StockReport stockReport, OperationContext context) {
-        return context.ai()
-                .withAutoLlm()
-                .withPromptContributor(Personas.CUSTOMER_REPRESENTATIVE)
-                .createObject(String.format("Compose a reply mail to customer for items being out of stock: " + stockReport.text())
-                        .trim(), CustomerConfirmationReport.class);
+                .withToolObjects(List.of(orders, inventory, catalogue))
+                .createObject(String.format("""
+                        Check stock for: %s
+                        STRICT: Set `hasStock` to true if stock is available.
+                        """, replacementReport.text()), StockReport.class);
     }
 
     @Action
@@ -105,7 +88,7 @@ public class OrderSupportAgent {
         return ai
                 .withAutoLlm()
                 .withPromptContributor(Personas.STORE_REPRESENTATIVE)
-                .withToolObjects(List.of(ruleBook, inventory, orders))
+                .withToolObjects(List.of(inventory, orders))
                 .createObject("Confirm delivery details: " + stockReport.text(), DeliveryReport.class);
     }
 
@@ -117,16 +100,6 @@ public class OrderSupportAgent {
                 .withPromptContributor(Personas.CUSTOMER_REPRESENTATIVE)
                 .createObject(String.format("Compose a reply mail to customer: " + deliveryReport.text())
                         .trim(), CustomerConfirmationReport.class);
-    }
-
-    @Condition
-    boolean orderEligibilityCondition(ReplacementReport replacementReport) {
-        return replacementReport.isEligible();
-    }
-
-    @Condition
-    boolean hasStockCondition(StockReport stockReport) {
-        return stockReport.hasStock();
     }
 
 }

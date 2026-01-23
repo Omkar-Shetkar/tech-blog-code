@@ -10,8 +10,8 @@ public class RuleBook {
     public String rules() {
         return """
                 - Check whether the item is eatable or not.
-                - Eatable items aren't eligible for replacement.
-                - Non-eatable items are eligible for replacement.
+                - Eatable items like bakery, dairy, snacks products aren't eligible for replacement.
+                - Non-eatable items like Electronics, Books are eligible for replacement.
                 """;
     }
 }
