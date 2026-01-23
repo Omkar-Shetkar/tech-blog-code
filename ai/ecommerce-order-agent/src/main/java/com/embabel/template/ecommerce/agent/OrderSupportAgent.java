@@ -60,7 +60,7 @@ public class OrderSupportAgent {
     public record CustomerConfirmationReport(String text) {
     }
 
-    @Action(description = "Received order replacement request from customer")
+    @Action(description = "Receives order replacement request from customer")
     public ReplacementReport replacementReport(UserInput userInput, Ai ai) {
         return ai.withAutoLlm()
                 .withToolObjects(List.of(ruleBook, catalogue, orders))
