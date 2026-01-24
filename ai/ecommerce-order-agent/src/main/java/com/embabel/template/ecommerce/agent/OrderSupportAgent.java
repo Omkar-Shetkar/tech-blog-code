@@ -145,9 +145,6 @@ public class OrderSupportAgent {
 
     @Condition
     boolean isEligible(ReplacementReport replacementReport) {
-        logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        logger.info(">>>>>>>>> Item eligible for replacement: {}", replacementReport.isEligible());
-        logger.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         return replacementReport.isEligible();
     }
 
