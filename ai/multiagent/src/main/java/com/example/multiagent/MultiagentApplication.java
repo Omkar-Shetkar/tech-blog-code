@@ -3,6 +3,7 @@ package com.example.multiagent;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
+import com.embabel.agent.api.annotation.RunSubagent;
 import com.embabel.agent.api.common.OperationContext;
 import com.embabel.agent.api.invocation.AgentInvocation;
 import com.embabel.agent.api.invocation.SupervisorInvocation;
@@ -50,8 +51,13 @@ record SummarisedQuery(String orderId, String query) {
 @Agent(description = "This agent translates customer queries to English.")
 class TranslationAgent {
 
+    private final SummarizationAgent summarizationAgent;
+
+    public TranslationAgent(SummarizationAgent summarizationAgent) {
+        this.summarizationAgent = summarizationAgent;
+    }
+
     @Action
-    @AchievesGoal(description = "Translate customer query to English")
     public TranslatedQuery translateToEnglish(UserInput userInput, OperationContext operationContext) {
         return operationContext.ai()
                 .withAutoLlm()
@@ -60,6 +66,13 @@ class TranslationAgent {
                         Output only the translated text.
                         """, userInput.getContent()), TranslatedQuery.class);
     }
+
+    @Action
+    @AchievesGoal(description = "Translate customer query to English")
+    public SummarisedQuery delegateToSummarizationAgent(TranslatedQuery translatedQuery) {
+        return RunSubagent.fromAnnotatedInstance(summarizationAgent, SummarisedQuery.class);
+    }
+
 }
 
 @Agent(description = "This agent summarizes customer queries.")
