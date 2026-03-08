@@ -19,7 +19,7 @@ class EssayWriter {
 
     @Action(description = "Improve an essay based on a review")
     @AchievesGoal(description = "Produce an improved essay based on the review")
-    Essay writeEssay(Essay essay, EssayReview review, OperationContext context) {
+    Essay improveEssay(Essay essay, EssayReview review, OperationContext context) {
         return context.ai()
                 .withAutoLlm()
                 .withSystemPrompt("You are a creative writer. Use the following review to improve the essay.")
