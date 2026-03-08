@@ -6,7 +6,7 @@ import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.OperationContext;
 import com.embabel.agent.domain.io.UserInput;
 
-@Agent(description = "Quality assurance judge for AI outputs")
+@Agent(description = "Writer agent that creates and improves essays based on user input and reviews")
 class EssayWriter {
 
     @Action(description = "Write an essay based on user input")
