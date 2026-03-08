@@ -14,7 +14,7 @@ class EssayWriter {
         return context.ai()
                 .withAutoLlm()
                 .withSystemPrompt("You are a creative writer.")
-                .createObject("Write a essay based on the following user input: " + userInput.getContent(), Essay.class);
+                .createObject("Write an essay based on the following user input: " + userInput.getContent(), Essay.class);
     }
 
     @Action(description = "Improve an essay based on a review")
