@@ -4,7 +4,7 @@ import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.OperationContext;
 
-@Agent(description = "Quality assurance judge for AI outputs")
+@Agent(description = "Agent that reviews essays and provides feedback")
 public class EssayReviewer {
 
     @Action(description = "Review an essay and provide feedback")
